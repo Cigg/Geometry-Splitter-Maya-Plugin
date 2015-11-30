@@ -7,7 +7,7 @@
 ## Generate build files
 Create a build-folder and run CMake for your platform. Set -DMAYA_VERSION to your Maya version (default is 2016).
 
-Example: How to generate build files for windows:
+Example: How to generate build files for windows using Visual Studio 2012 compiler and Maya 2016:
 ```bash
 cmake -G "Visual Studio 11 2012 Win64" -DMAYA_VERSION=2016 ../
 ```

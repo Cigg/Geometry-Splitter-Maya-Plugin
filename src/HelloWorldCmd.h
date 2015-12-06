@@ -8,8 +8,12 @@
  
 class HelloWorld : public MPxCommand {
  public:
+  // Needed functions
   HelloWorld() {};
   virtual MStatus doIt(const MArgList& argList);
   static void* creator();
+
+  // Other functions
+  MObject createCube(float cubeSize);
 };
 #endif

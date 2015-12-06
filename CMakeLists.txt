@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 project(sampleplugin)
 
+if(CMAKE_CONFIGURATION_TYPES)
+    message("Multi-configuration generator")
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "My multi config types" FORCE)
+else()
+    message("Single-configuration generator")
+endif()
+
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/modules)
 

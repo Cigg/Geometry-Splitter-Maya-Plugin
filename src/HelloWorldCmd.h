@@ -5,6 +5,8 @@
 #include <maya/MObject.h>
 #include <maya/MGlobal.h>
 #include <maya/MPxCommand.h>
+#include <maya/MFloatArray.h>
+#include <maya/MFnMesh.h>
  
 class HelloWorld : public MPxCommand {
  public:
@@ -15,5 +17,7 @@ class HelloWorld : public MPxCommand {
 
   // Other functions
   MObject createCube(float cubeSize);
+  MStatus addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloatArray vPoints, const MFnMesh &planeMesh);
+  void printSelectedObjects();
 };
 #endif

@@ -1,11 +1,13 @@
 #include "HelloWorldCmd.h"
 #include <maya/MFnPlugin.h>
 
-#include <maya/MFnMesh.h>
 #include <maya/MPoint.h>
 #include <maya/MFloatPoint.h>
 #include <maya/MFloatPointArray.h>
+#include <maya/MPointArray.h>
 #include <maya/MSelectionList.h>
+#include <maya/MItSelectionList.h>
+#include <maya/MDagPath.h>
  
 void* HelloWorld::creator() { return new HelloWorld; }
 
@@ -53,23 +55,149 @@ MObject HelloWorld::createCube(float cubeSize) {
   return newMesh;
 }
 
-MStatus HelloWorld::doIt(const MArgList& argList) {
+// Maps vertex points in uv coordinates (uPoints and vPoints) onto plane and creates a new mesh
+// Only works with planes with the normal along the y-axis for now.
+MStatus HelloWorld::addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloatArray vPoints, const MFnMesh &planeMesh) {
+  if(uPoints.length() != vPoints.length())
+    return MS::kFailure;
+
+  MPointArray planePoints;
+  MIntArray planeVertexCount;
+  MIntArray planeVertexList;
+  planeMesh.getPoints(planePoints);
+  planeMesh.getVertices(planeVertexCount, planeVertexList);
+
+  cout << "planeVertexCount: " << planeVertexCount << endl;
+  cout << "planeVertexList: " << planeVertexList << endl;
+
+  double minX, minZ, maxX, maxZ;
+  minX = minZ = 100000;
+  maxX = maxZ = -100000;
+
+  // Find min and max points of the plane
+  for(unsigned int i = 0; i < planePoints.length(); i++) {
+    double x = planePoints[i].x;
+    double z = planePoints[i].z;
+    if(planePoints[i].x < minX)
+      minX = x;
+    if(planePoints[i].x > maxX)
+      maxX = x;
+    if(planePoints[i].z < minZ)
+      minZ = x;
+    if(planePoints[i].z > maxZ)
+      maxZ = z;
+  }
+
+  // Set plane's corner pos and width and height
+  double planeX = minX;
+  double planeY = minZ;
+  double planeWidth = maxX - minX;
+  double planeHeight = maxZ - minZ;
+
+  // Prepare stuff for MFnMesh
+  int numVertices = uPoints.length();
+  int numPolygons = 1;
+  MPointArray pointArray;
+  int polygon_counts[1] = {numVertices};
+  MIntArray polygonCounts(polygon_counts, 1);
+  int *polygon_connects = new int[numVertices];
+
+  for(int i = 0; i < numVertices; i++) {
+    polygon_connects[i] = i;
+    MPoint point(planeX + planeWidth * uPoints[i], 0, planeY + planeHeight * vPoints[i]);
+    pointArray.append(point);
+  }
+
+  MIntArray polygonConnects(polygon_connects, numVertices);
+  delete[] polygon_connects;
+
+  // cout << "numVertices: " << numVertices << endl
+  //      << "numPolygons: " << numPolygons << endl
+  //      << "pointArray: " << pointArray << endl
+  //      << "polygonCounts: " << polygonCounts << endl
+  //      << "polygonConnects: " << polygonConnects << endl
+  //      << "planeX: " << planeX << endl
+  //      << "planeY: " << planeY << endl
+  //      << "planeWidth: " << planeWidth << endl
+  //      << "planeHeight: " << planeHeight << endl;
+
+  MFnMesh mesh;
+  object = mesh.create(numVertices, numPolygons, pointArray, polygonCounts, polygonConnects);
+
+  return MS::kSuccess;
+}
+
+MStatus HelloWorld::doIt(const MArgList& args) {
   //MString str = "Hello " + argList.asString(0);
   //MGlobal::displayInfo(str.asChar());
 
-  MSelectionList selected;
-  MGlobal::getActiveSelectionList(selected);
-  for( int i=0; i<selected.length(); ++i ) {
-    MObject obj;
+  cout << endl << "HelloWorld: Doing it!" << endl << endl;
 
-    // returns the i'th selected dependency node
-    selected.getDependNode(i,obj);
+  MSelectionList list;
+  MGlobal::getActiveSelectionList(list);
 
-    // Attach a function set to the selected object
-    MFnDependencyNode fn(obj);
+  MObject node;
+  MFnDependencyNode depFn;
+  MStringArray types;
+  MString name;
+  MDagPath dag;
+  
+  for( MItSelectionList iter( list ); !iter.isDone(); iter.next() ) {
+      // Print the types and function sets of all of the objects
+      iter.getDependNode( node );
+      depFn.setObject( node );
+      
+      name = depFn.name();
+      MGlobal::getFunctionSetList( node, types );
+      cout << "Name: " << name.asChar() << endl;
+      cout << "Type: " << node.apiTypeStr() << endl;
+      cout << "Function Sets: ";
+      
+      for(unsigned int i = 0; i < types.length(); i++ ) {
+          if ( i > 0 ) cout << ", ";
+          cout << types[i].asChar();
+      }
+      cout << endl << endl;
 
-    // write the object name to the script editor
-    MGlobal::displayInfo( fn.name().asChar() );
+      // Check if object has a MDagPath
+      if(iter.getDagPath( dag ) == MS::kSuccess) {
+      
+        // Get the MFnMesh from the MDagPath
+        dag.extendToShape();
+        MFnMesh mesh(dag.node());
+
+        MPointArray points;
+        mesh.getPoints(points);
+        for(unsigned int i = 0; i < points.length(); i++) {
+          cout << "Points[" << i << "]: " << points[i] << endl;
+        }
+
+        const float u[4] = {0, 0, 0.5, 0.5};
+        const float v[4] = {0, 0.5, 0.5, 0};
+        MFloatArray uPoints(u, 4);
+        MFloatArray vPoints(v, 4);
+
+        MObject newMesh;
+        if(addPlaneSubMesh(newMesh, uPoints, vPoints, mesh) == MS::kSuccess)
+          cout << "Added plane sub mesh!" << endl;
+        else
+          cout << "Couldn't add plane sub mesh!" << endl;
+
+        // TODO: Copy transform
+
+        //Doing random stuff to mesh
+        // int f[1] = {0};
+        // MIntArray faces(f, 1);
+        // mesh.subdivideFaces(faces, 1);
+        // mesh.updateSurface();
+
+        // MPoint p[3] = {MPoint(-0.5, 0.0, 0.5), MPoint(0.0, 0.0, 1.0), MPoint(0.5, 0.0, 0.5)};
+        // MPointArray newPolygonPoints(p, 3);
+        // mesh.addPolygon(newPolygonPoints);
+      }
+      else {
+        cout << "Selected object has no MDagPath!" << endl << endl;
+      }
   }
 
   //MObject cubeMesh = createCube(1.0f);

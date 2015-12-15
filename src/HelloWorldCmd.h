@@ -18,6 +18,7 @@ class HelloWorld : public MPxCommand {
   // Other functions
   MObject createCube(float cubeSize);
   MStatus addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloatArray vPoints, const MFnMesh &planeMesh);
+  MStatus splitFromImage(MFnMesh &mesh);
   void printSelectedObjects();
 };
 #endif

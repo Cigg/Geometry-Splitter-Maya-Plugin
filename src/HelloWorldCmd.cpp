@@ -1,6 +1,9 @@
 #include "HelloWorldCmd.h"
 #include <maya/MFnPlugin.h>
 
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+
 #include <maya/MPoint.h>
 #include <maya/MFloatPoint.h>
 #include <maya/MFloatPointArray.h>
@@ -127,6 +130,65 @@ MStatus HelloWorld::addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloat
   return MS::kSuccess;
 }
 
+MStatus HelloWorld::splitFromImage(MFnMesh &mesh) {
+	cv::Mat img, imgGray;
+	std::string str = "test.jpg";
+	cout << "Image filename: " << str << endl;
+	img = cv::imread(str.c_str(), 1);
+	if (!img.data) // Check for invalid input
+	{
+		cout << "Could not open or find the image" << endl;
+		return MS::kFailure;
+	}
+
+	int thresh = 100;
+	int max_thresh = 255;
+	cv::RNG rng(12345);
+
+	/// Load source image and convert it to gray
+
+	/// Convert image to gray and blur it
+	cv::cvtColor(img, imgGray, CV_BGR2GRAY);
+	cv::blur(imgGray, imgGray, cv::Size(3, 3));
+
+	cv::Mat canny_output;
+	std::vector<std::vector<cv::Point> > contours;
+	std::vector<cv::Vec4i> hierarchy;
+
+	/// Detect edges using canny
+	cv::Canny(imgGray, canny_output, thresh, thresh * 2, 3);
+	/// Find contours
+	cout << "Before find contours" << endl;
+	cv::findContours(canny_output, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+	cout << "After find contours" << endl;
+
+
+	for (int i = 0; i < contours.size(); i++) {
+		MFloatArray uPoints;
+		MFloatArray vPoints;
+
+		std::cout << "contours[" << i << "]" << std::endl;
+		for (int j = 0; j < contours[i].size(); j++) {
+			std::cout << "   contours[" << i << "][" << j << "]" << std::endl;
+			cv::Point pt = contours[i][j];
+			float u = (float)pt.x / img.cols;
+			float v = (float)pt.y / img.rows;
+			uPoints.append(u);
+			vPoints.append(v);
+			//std::cout << "       " << pt.x << ", " << pt.y << std::endl;
+			//std::cout << "       " << u << ", " << v << std::endl;
+		}
+
+		MObject newMesh;
+		if (addPlaneSubMesh(newMesh, uPoints, vPoints, mesh) == MS::kSuccess)
+			cout << "Added plane sub mesh!" << endl;
+		else
+			cout << "Couldn't add plane sub mesh!" << endl;
+ 	}
+
+	return MS::kSuccess;
+}
+
 MStatus HelloWorld::doIt(const MArgList& args) {
   //MString str = "Hello " + argList.asString(0);
   //MGlobal::displayInfo(str.asChar());
@@ -172,7 +234,14 @@ MStatus HelloWorld::doIt(const MArgList& args) {
           cout << "Points[" << i << "]: " << points[i] << endl;
         }
 
-        const float u[4] = {0, 0, 0.5, 0.5};
+		if (splitFromImage(mesh) == MS::kSuccess) {
+			cout << "Splitted image!" << endl;
+		}
+		else {
+			cout << "Could not split image!" << endl;
+		}
+
+        /*const float u[4] = {0, 0, 0.5, 0.5};
         const float v[4] = {0, 0.5, 0.5, 0};
         MFloatArray uPoints(u, 4);
         MFloatArray vPoints(v, 4);
@@ -181,7 +250,7 @@ MStatus HelloWorld::doIt(const MArgList& args) {
         if(addPlaneSubMesh(newMesh, uPoints, vPoints, mesh) == MS::kSuccess)
           cout << "Added plane sub mesh!" << endl;
         else
-          cout << "Couldn't add plane sub mesh!" << endl;
+          cout << "Couldn't add plane sub mesh!" << endl;*/
 
         // TODO: Copy transform
 

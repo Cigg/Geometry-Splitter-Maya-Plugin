@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 project(sampleplugin)
 
 if(CMAKE_CONFIGURATION_TYPES)
@@ -14,11 +14,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/modules)
 set(SOURCE_FILES "src/HelloWorldCmd.h" "src/HelloWorldCmd.cpp")
 
 find_package(Maya REQUIRED)
+find_package(OpenCV REQUIRED)
 
 include_directories(${MAYA_INCLUDE_DIR})
 link_directories(${MAYA_LIBRARY_DIR})
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} ${MAYA_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${MAYA_LIBRARIES} ${OpenCV_LIBS})
 
 MAYA_PLUGIN(${PROJECT_NAME})
 install(TARGETS ${PROJECT_NAME} ${MAYA_TARGET_TYPE} DESTINATION plug-ins)

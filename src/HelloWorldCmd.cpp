@@ -70,8 +70,8 @@ MStatus HelloWorld::addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloat
   planeMesh.getPoints(planePoints);
   planeMesh.getVertices(planeVertexCount, planeVertexList);
 
-  cout << "planeVertexCount: " << planeVertexCount << endl;
-  cout << "planeVertexList: " << planeVertexList << endl;
+  cout << "planeVertexCount: " << planeVertexCount.length() << endl;
+  cout << "planeVertexList: " << planeVertexList.length() << endl;
 
   double minX, minZ, maxX, maxZ;
   minX = minZ = 100000;
@@ -130,11 +130,11 @@ MStatus HelloWorld::addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloat
   return MS::kSuccess;
 }
 
-MStatus HelloWorld::splitFromImage(MFnMesh &mesh) {
+MStatus HelloWorld::splitFromImage(MFnMesh &mesh, MString image) {
 	cv::Mat img, imgGray;
-	std::string str = "test.jpg";
-	cout << "Image filename: " << str << endl;
-	img = cv::imread(str.c_str(), 1);
+	// std::string str = image.asChar();
+	cout << "Image filename: " << image.asChar() << endl;
+	img = cv::imread(image.asChar(), 1);
 	if (!img.data) // Check for invalid input
 	{
 		cout << "Could not open or find the image" << endl;
@@ -167,9 +167,9 @@ MStatus HelloWorld::splitFromImage(MFnMesh &mesh) {
 		MFloatArray uPoints;
 		MFloatArray vPoints;
 
-		std::cout << "contours[" << i << "]" << std::endl;
+		// std::cout << "contours[" << i << "]" << std::endl;
 		for (int j = 0; j < contours[i].size(); j++) {
-			std::cout << "   contours[" << i << "][" << j << "]" << std::endl;
+			//std::cout << "   contours[" << i << "][" << j << "]" << std::endl;
 			cv::Point pt = contours[i][j];
 			float u = (float)pt.x / img.cols;
 			float v = (float)pt.y / img.rows;
@@ -192,9 +192,7 @@ MStatus HelloWorld::splitFromImage(MFnMesh &mesh) {
 MStatus HelloWorld::doIt(const MArgList& args) {
   //MString str = "Hello " + argList.asString(0);
   //MGlobal::displayInfo(str.asChar());
-
-  cout << endl << "HelloWorld: Doing it!" << endl << endl;
-
+	
   MSelectionList list;
   MGlobal::getActiveSelectionList(list);
 
@@ -213,13 +211,14 @@ MStatus HelloWorld::doIt(const MArgList& args) {
       MGlobal::getFunctionSetList( node, types );
       cout << "Name: " << name.asChar() << endl;
       cout << "Type: " << node.apiTypeStr() << endl;
-      cout << "Function Sets: ";
-      
+	  
+	  /*cout << "Function Sets: ";
+	  
       for(unsigned int i = 0; i < types.length(); i++ ) {
           if ( i > 0 ) cout << ", ";
           cout << types[i].asChar();
       }
-      cout << endl << endl;
+      cout << endl << endl;*/
 
       // Check if object has a MDagPath
       if(iter.getDagPath( dag ) == MS::kSuccess) {
@@ -230,11 +229,11 @@ MStatus HelloWorld::doIt(const MArgList& args) {
 
         MPointArray points;
         mesh.getPoints(points);
-        for(unsigned int i = 0; i < points.length(); i++) {
+        /*for(unsigned int i = 0; i < points.length(); i++) {
           cout << "Points[" << i << "]: " << points[i] << endl;
-        }
+        }*/
 
-		if (splitFromImage(mesh) == MS::kSuccess) {
+		if (splitFromImage(mesh, args.asString(0)) == MS::kSuccess) {
 			cout << "Splitted image!" << endl;
 		}
 		else {

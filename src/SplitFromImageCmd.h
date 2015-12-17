@@ -8,17 +8,17 @@
 #include <maya/MFloatArray.h>
 #include <maya/MFnMesh.h>
  
-class HelloWorld : public MPxCommand {
+class SplitFromImage : public MPxCommand {
  public:
   // Needed functions
-  HelloWorld() {};
+  SplitFromImage() {};
   virtual MStatus doIt(const MArgList& argList);
   static void* creator();
 
   // Other functions
-  MObject createCube(float cubeSize);
   MStatus addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloatArray vPoints, const MFnMesh &planeMesh);
-  MStatus splitFromImage(MFnMesh &mesh, MString image);
+  MStatus splitFromBinaryImage(MFnMesh &mesh, MString image);
+  MStatus splitFromRGBImage(MFnMesh &mesh, MString image);
   void printSelectedObjects();
 };
 #endif

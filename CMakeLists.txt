@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(sampleplugin)
+project(geometrysplitter)
 
 if(CMAKE_CONFIGURATION_TYPES)
     message("Multi-configuration generator")
@@ -22,4 +22,4 @@ add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ${MAYA_LIBRARIES} ${OpenCV_LIBS})
 
 MAYA_PLUGIN(${PROJECT_NAME})
-install(TARGETS ${PROJECT_NAME} ${MAYA_TARGET_TYPE} DESTINATION plug-ins)
+# install(TARGETS ${PROJECT_NAME} ${MAYA_TARGET_TYPE} DESTINATION plug-ins)

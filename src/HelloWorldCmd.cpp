@@ -79,6 +79,9 @@ MStatus HelloWorld::addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloat
 
   // Find min and max points of the plane
   for(unsigned int i = 0; i < planePoints.length(); i++) {
+	  if (i == 0 || i == planePoints.length() - 1){
+		  // cout << "point[" << i << "]" << planePoints[i].x << endl;
+	  }
     double x = planePoints[i].x;
     double z = planePoints[i].z;
     if(planePoints[i].x < minX)
@@ -124,8 +127,13 @@ MStatus HelloWorld::addPlaneSubMesh(MObject &object, MFloatArray uPoints, MFloat
   //      << "planeWidth: " << planeWidth << endl
   //      << "planeHeight: " << planeHeight << endl;
 
+  for (int i = 0; i < vPoints.length(); i++){
+	  vPoints[i] = 1.0 - vPoints[i];
+  }
+
   MFnMesh mesh;
-  object = mesh.create(numVertices, numPolygons, pointArray, polygonCounts, polygonConnects);
+  object = mesh.create(numVertices, numPolygons, pointArray, polygonCounts, polygonConnects, uPoints, vPoints);
+  mesh.assignUVs(polygonCounts, polygonConnects);
 
   return MS::kSuccess;
 }
@@ -149,7 +157,7 @@ MStatus HelloWorld::splitFromImage(MFnMesh &mesh, MString image) {
 
 	/// Convert image to gray and blur it
 	cv::cvtColor(img, imgGray, CV_BGR2GRAY);
-	cv::blur(imgGray, imgGray, cv::Size(3, 3));
+	// cv::blur(imgGray, imgGray, cv::Size(3, 3));
 
 	cv::Mat canny_output;
 	std::vector<std::vector<cv::Point> > contours;
@@ -229,6 +237,13 @@ MStatus HelloWorld::doIt(const MArgList& args) {
 
         MPointArray points;
         mesh.getPoints(points);
+
+		MFloatArray uPoints;
+		MFloatArray vPoints;
+		mesh.getUVs(uPoints, vPoints);
+		for (unsigned int i = 0; i < uPoints.length(); i++) {
+			cout << "uPoints[" << i << "]: " << uPoints[i] << endl;
+		}
         /*for(unsigned int i = 0; i < points.length(); i++) {
           cout << "Points[" << i << "]: " << points[i] << endl;
         }*/
